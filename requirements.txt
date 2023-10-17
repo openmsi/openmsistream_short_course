@@ -1,0 +1,2 @@
+# Python wrapper around the SensorPush Bluetooth API
+sensorpush-bleak >= 1.0.7

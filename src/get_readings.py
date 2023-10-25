@@ -11,8 +11,9 @@ async def print_temp_humidity(device_address):
     """Connect to a device and get a temperature an humidity reading to print"""
     client = BleakClient(device_address)
     await client.connect()
-    temp_c = await sp.read_temperature(client)
-    hum = await sp.read_humidity(client)
+    temp_c, hum = await asyncio.gather(
+        sp.read_temperature(client), sp.read_humidity(client)
+    )
     print(f"temperature = {temp_c} degC")
     print(f"humidity = {hum} %")
     await client.disconnect()

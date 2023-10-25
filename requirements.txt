@@ -1,2 +1,4 @@
 # Python wrapper around the SensorPush Bluetooth API
 sensorpush-bleak >= 1.0.7
+# OpenMSIToolbox for ControlledProcess
+openmsitoolbox >= 1.1.1

@@ -7,10 +7,9 @@ import asyncio
 from datetime import datetime
 from bleak import BleakClient
 from bleak.exc import BleakDeviceNotFoundError
-from openmsitoolbox import Runnable, OpenMSIArgumentParser
+from openmsitoolbox import Runnable, OpenMSIArgumentParser, ControlledProcessAsync
 from openmsitoolbox.argument_parsing.parser_callbacks import positive_int
 from sensorpush import sensorpush as sp
-from controlled_process_async import ControlledProcessAsync
 
 
 class SensorPushArgumentParser(OpenMSIArgumentParser):

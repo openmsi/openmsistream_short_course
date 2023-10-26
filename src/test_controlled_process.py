@@ -18,6 +18,13 @@ class ControlledProcessAsyncForTesting(ControlledProcessAsync):
         self.counter = 0
         self.checked = False
         self.on_shutdown_called = False
+        self.post_run_called = False
+
+    async def run_task(self):
+        while self.alive:
+            if self.counter < 5:
+                self.counter += 1
+            await asyncio.sleep(1)
 
     def _on_check(self):
         self.checked = True
@@ -25,10 +32,8 @@ class ControlledProcessAsyncForTesting(ControlledProcessAsync):
     def _on_shutdown(self):
         self.on_shutdown_called = True
 
-    async def run(self):
-        if self.counter < 5:
-            self.counter += 1
-            await asyncio.sleep(1)
+    async def _post_run(self):
+        self.post_run_called = True
 
 
 class TestControlledProcess(unittest.TestCase):
@@ -44,9 +49,11 @@ class TestControlledProcess(unittest.TestCase):
         await asyncio.sleep(1)
         self.assertTrue(controlled_process.checked)
         self.assertFalse(controlled_process.on_shutdown_called)
+        self.assertFalse(controlled_process.post_run_called)
         await controlled_process.control_command_queue.put("q")
         await asyncio.sleep(2.0)
         self.assertTrue(controlled_process.on_shutdown_called)
+        self.assertTrue(controlled_process.post_run_called)
         stop_event.set()
 
     async def run_async_tests(self, controlled_process):

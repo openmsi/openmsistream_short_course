@@ -7,13 +7,10 @@ import asyncio
 from datetime import datetime
 from bleak import BleakClient
 from bleak.exc import BleakDeviceNotFoundError
-from openmsitoolbox import (
-    ControlledProcessSingleThread,
-    Runnable,
-    OpenMSIArgumentParser,
-)
+from openmsitoolbox import Runnable, OpenMSIArgumentParser
 from openmsitoolbox.argument_parsing.parser_callbacks import positive_int
 from sensorpush import sensorpush as sp
+from controlled_process_async import ControlledProcessAsync
 
 
 class SensorPushArgumentParser(OpenMSIArgumentParser):
@@ -35,7 +32,7 @@ class SensorPushArgumentParser(OpenMSIArgumentParser):
                     "to CSV files (seconds). Inexact, as there is some lag in "
                     "communicating with sensors."
                 ),
-                "default": 10,
+                "default": 5,
             },
         ],
         "n_connection_retries": [
@@ -49,43 +46,108 @@ class SensorPushArgumentParser(OpenMSIArgumentParser):
     }
 
 
-class TemperatureHumidityCSVWriter(ControlledProcessSingleThread, Runnable):
+class TemperatureHumidityCSVWriter(ControlledProcessAsync, Runnable):
     """Writes out CSV files of timestamped temperature/humidity measurements from
     a SensorPush HT.w device on a given time interval until the user shuts it down
     """
 
+    #################### CONSTANTS ####################
+
     ARGUMENT_PARSER_TYPE = SensorPushArgumentParser
     PRINT_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
     FILENAME_TIMESTAMP_FORMAT = "%Y-%m-%d-%H-%M-%S"
+
+    #################### PUBLIC METHODS ####################
 
     def __init__(
         self,
         device_address,
         output_dir,
         sampling_interval,
-        streamlevel,
         n_connection_retries,
+        **other_kwargs,
     ):
-        super().__init__(streamlevel=streamlevel)
+        super().__init__(**other_kwargs)
         self.device_address = device_address
         self.output_dir = output_dir
         self.sampling_interval = sampling_interval
         self.n_connection_retries = n_connection_retries
         self.start_time = datetime.now()
         self.n_files_written = 0
-        self.last_reading_time = None
+        self._reading_queue = None
+        self._client = None
 
-    async def get_reading(self):
-        """Connect to the SensorPush device and return new temperature and humidity
-        measurements
+    async def run_task(self):
+        """Connect to the device and write out measurements as they come in"""
+        self._reading_queue = asyncio.Queue()
+        await self._connect_to_client()
+        self.logger.info(
+            f"Writing temperature/humidity readings every {self.sampling_interval} secs"
+        )
+        await asyncio.gather(self._enqueue_readings(), self._write_out_readings())
+
+    #################### PRIVATE HELPER METHODS ####################
+
+    def _check_for_client_and_reading_queue(self):
+        """Logs and raises a RuntimeError if the client or reading queue haven't
+        been initialized yet
         """
+        if self._client is None:
+            self.logger.error(
+                "ERROR: client must be created first!", exc_type=RuntimeError
+            )
+        if self._reading_queue is None:
+            self.logger.error(
+                "ERROR: reading queue must be created first!", exc_type=RuntimeError
+            )
+
+    async def _write_out_readings(self):
+        """While the process is running, get readings from the queue and write them
+        out to CSV files
+        """
+        self._check_for_client_and_reading_queue()
+        while self.alive:
+            reading = await self._reading_queue.get()
+            timestamp = reading[0]
+            temp_c = reading[1]
+            hum = reading[2]
+            csv_filename = (
+                f"readings_{self.device_address}_"
+                f"{datetime.strftime(timestamp,self.FILENAME_TIMESTAMP_FORMAT)}"
+                ".csv"
+            )
+            csv_filepath = self.output_dir / csv_filename
+            reading_csv_str = ",".join([str(temp_c), str(hum)])
+            self.logger.debug(
+                f"Writing reading of {temp_c} degC, {hum}% to {csv_filename}"
+            )
+            with open(csv_filepath, "w") as out_fp:
+                out_fp.write(reading_csv_str)
+            self.n_files_written += 1
+
+    async def _enqueue_readings(self):
+        """While the process is running, get readings every sampling interval and add
+        them to the reading queue
+        """
+        self._check_for_client_and_reading_queue()
+        while self.alive:
+            timestamp = datetime.now()
+            temp_c, hum = await asyncio.gather(
+                sp.read_temperature(self._client), sp.read_humidity(self._client)
+            )
+            self.logger.debug(f"Enqueing reading of {temp_c} degC, {hum}%")
+            await self._reading_queue.put((timestamp, temp_c, hum))
+            await asyncio.sleep(self.sampling_interval)
+
+    async def _connect_to_client(self):
+        """Connect to the bleak client"""
         self.logger.debug(
             f"Connecting to SensorPush device at {self.device_address}..."
         )
-        client = BleakClient(self.device_address)
+        self._client = BleakClient(self.device_address)
         for iretry in range(self.n_connection_retries):
             try:
-                await client.connect()
+                await self._client.connect()
                 break
             except BleakDeviceNotFoundError as exc:
                 if iretry < self.n_connection_retries:
@@ -101,32 +163,10 @@ class TemperatureHumidityCSVWriter(ControlledProcessSingleThread, Runnable):
                     )
                     self.logger.error(errmsg, exc_info=exc, reraise=True)
         self.logger.debug("Connected!")
-        temp_c, hum = await asyncio.gather(
-            sp.read_temperature(client), sp.read_humidity(client)
+        batt_mv, _ = await sp.read_batt_info(self._client)
+        self.logger.info(
+            f"Connected to device {self.device_address} (battery power={batt_mv}V)"
         )
-        await client.disconnect()
-        return temp_c, hum
-
-    def _run_iteration(self):
-        """If it's been enough time since the last reading was taken, take another"""
-        if self.last_reading_time is not None and (
-            (datetime.now() - self.last_reading_time).total_seconds()
-            < self.sampling_interval
-        ):
-            return
-        temp_c, hum = asyncio.run(self.get_reading())
-        self.last_reading_time = datetime.now()
-        csv_filename = (
-            f"readings_{self.device_address}_"
-            f"{datetime.strftime(self.last_reading_time,self.FILENAME_TIMESTAMP_FORMAT)}"
-            ".csv"
-        )
-        csv_filepath = self.output_dir / csv_filename
-        reading_csv_str = ",".join([str(temp_c), str(hum)])
-        self.logger.debug(f"Writing reading of {temp_c} degC, {hum}% to {csv_filename}")
-        with open(csv_filepath, "w") as out_fp:
-            out_fp.write(reading_csv_str)
-        self.n_files_written+=1
 
     def _on_check(self):
         """Print the number of files written out so far when the program is checked"""
@@ -144,6 +184,13 @@ class TemperatureHumidityCSVWriter(ControlledProcessSingleThread, Runnable):
             f"to {datetime.strftime(datetime.now(),self.PRINT_TIMESTAMP_FORMAT)}"
         )
         self.logger.info(msg)
+
+    async def _post_run(self):
+        """Diconnect the client when the whole thing is done"""
+        self._check_for_client_and_reading_queue()
+        await self._client.disconnect()
+
+    #################### CLASS METHODS ####################
 
     @classmethod
     def get_command_line_arguments(cls):
@@ -166,11 +213,11 @@ class TemperatureHumidityCSVWriter(ControlledProcessSingleThread, Runnable):
         csv_writer = cls(
             args.device_address,
             args.output_dir,
-            args.logger_stream_level,
             args.sampling_interval,
             args.n_connection_retries,
+            streamlevel=args.logger_stream_level,
         )
-        csv_writer.run()
+        asyncio.run(csv_writer.run_loop())
 
 
 def main(args=None):
@@ -180,37 +227,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
-
-# async def get_temp_humidity(connected_client):
-#     """Connect to a device and get a temperature an humidity reading to print"""
-#     client = BleakClient(device_address)
-#     await client.connect()
-#     temp_c = await sp.read_temperature(client)
-#     hum = await sp.read_humidity(client)
-#     print(f"temperature = {temp_c} degC")
-#     print(f"humidity = {hum} %")
-#     await client.disconnect()
-#
-#
-# async def write_reading_csvs(device_address):
-#     client = BleakClient(device_address)
-#     await client.connect()
-#
-#     await client.disconnect()
-#
-#
-# def get_args():
-#     """Return a Namescape of arguments to use for running the script"""
-#     parser = ArgumentParser()
-#     parser.add_argument(
-#         "device_address",
-#         help="The address (MAC or UUID) of the SensorPush device to connect to",
-#     )
-#     return parser.parse_args()
-#
-#
-# def main():
-#     """Send args to print function"""
-#     args = get_args()
-#     asyncio.run(print_temp_humidity(args.device_address))

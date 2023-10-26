@@ -47,17 +47,23 @@ class ControlledProcessAsync(LogOwner, ABC):
 
     async def run_loop(self):
         """Concurrently get user input, process user input, print the "still alive"
-        character, and run the "run" function until the process is shut down
+        character, and run the "run" function until the process is shut down. This
+        is the main function that child classes should call.
         """
         self.__alive = True
         # start up a Queue that will hold the control commands
         self.control_command_queue = asyncio.Queue()
-        await asyncio.gather(
-            self._add_user_input(),
-            self._handle_control_commands(),
-            self._print_still_alive(),
-            self.run(),
-        )
+        tasks = [
+            asyncio.create_task(self._add_user_input()),
+            asyncio.create_task(self._handle_control_commands()),
+            asyncio.create_task(self._print_still_alive()),
+            asyncio.create_task(self.run_task()),
+        ]
+        while self.__alive:
+            await asyncio.sleep(1)
+        for task in tasks:
+            task.cancel()
+        await self._post_run()
 
     def shutdown(self):
         """
@@ -72,8 +78,6 @@ class ControlledProcessAsync(LogOwner, ABC):
         """
         Listen for and add user input to a queue at one second intervals
         """
-        if not sys.stdin.isatty:
-            return
         while self.__alive:
             await asyncio.sleep(1)
             rlist, _, _ = select.select([sys.stdin], [], [], 0)
@@ -88,7 +92,7 @@ class ControlledProcessAsync(LogOwner, ABC):
             await asyncio.sleep(self.__update_secs)
             self.logger.debug(".")
 
-    async def _handle_control_commands(self) -> None:
+    async def _handle_control_commands(self):
         while self.__alive:
             # get anything from the control command queue
             cmd = await self.control_command_queue.get()
@@ -99,10 +103,18 @@ class ControlledProcessAsync(LogOwner, ABC):
                     self._on_check()
                 # otherwise just skip this unrecognized command
 
+    async def _post_run(self):
+        """This function is called after all the tasks have been shut down, to perform
+        any final cleanup.
+
+        Does nothing in the base class
+        """
+        return
+
     #################### ABSTRACT METHODS ####################
 
     @abstractmethod
-    async def run(self) -> None:
+    async def run_task(self) -> None:
         """
         Classes extending this base class should include the logic of actually
         running the controlled process in this function. It should include a

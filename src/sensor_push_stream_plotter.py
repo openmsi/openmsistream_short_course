@@ -1,0 +1,147 @@
+"""Plot temperature/humidity measurements as they're received from a topic"""
+
+# imports
+from datetime import datetime
+from io import BytesIO
+from threading import Thread
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib import animation
+from openmsitoolbox import Runnable
+from openmsistream import DataFileStreamProcessor
+from argument_parser import SensorPushArgumentParser
+from sensor_push_csv_writer import SensorPushCSVWriter
+
+
+class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
+    """Makes and live-updates a plot of any temperature/humidity readings read
+    from a topic while it's running
+    """
+
+    ARGUMENT_PARSER_TYPE = SensorPushArgumentParser
+
+    def __init__(self, config_file, topic_name, **kwargs):
+        super().__init__(config_file, topic_name, **kwargs)
+        self.measurements_df = None
+        self.fig, self.ax = plt.subplots(2, 1, sharex=True, figsize=(12.0, 9.0))
+        self._format_plot()
+
+    def update_plot(self, _):
+        if self.measurements_df is None or len(self.measurements_df) < 1:
+            return
+        for axs in self.ax:
+            axs.clear()
+        self._format_plot()
+        for dev_id in self.measurements_df["device_id"].unique():
+            device_df = self.measurements_df[
+                self.measurements_df["device_id"] == dev_id
+            ]
+            device_df.sort_values("timestamp", inplace=True)
+            timestamps = device_df["timestamp"]
+            temps = device_df["temperature"]
+            hums = device_df["humidity"]
+            self.ax[0].plot(timestamps, temps, marker="o", label=dev_id)
+            self.ax[1].plot(timestamps, hums, marker="o", label=dev_id)
+        for axs in self.ax:
+            axs.relim()
+            axs.autoscale_view()
+        self.ax[0].legend(loc="upper left")
+
+    def _format_plot(self):
+        self.ax[0].set_title("Temperature measurements")
+        self.ax[0].set_ylabel("temperature (deg C)")
+        self.ax[1].set_title("Humidity measurements")
+        self.ax[1].set_ylabel("humidity (%)")
+        self.ax[1].set_xlabel("timestamp")
+
+    def _process_downloaded_data_file(self, datafile, lock):
+        filename_split = datafile.filename.split("_")
+        dev_id = filename_split[1]
+        timestamp = datetime.strptime(
+            filename_split[2][: -len(".csv")],
+            SensorPushCSVWriter.FILENAME_TIMESTAMP_FORMAT,
+        )
+        data_line = BytesIO(datafile.bytestring).readline().decode().strip()
+        temp, hum = [float(val) for val in data_line.split(",")]
+        new_df = pd.DataFrame(
+            [
+                {
+                    "device_id": dev_id,
+                    "timestamp": timestamp,
+                    "temperature": temp,
+                    "humidity": hum,
+                }
+            ]
+        )
+        with lock:
+            if self.measurements_df is None:
+                self.measurements_df = new_df
+            else:
+                self.measurements_df = pd.concat(
+                    [self.measurements_df, new_df], ignore_index=True
+                )
+
+    # @classmethod
+    # def get_command_line_arguments(cls):
+    #     superargs, superkwargs = super().get_command_line_arguments()
+    #     args = [*superargs]
+    #     kwargs = {**superkwargs}
+    #     return args, kwargs
+
+    @classmethod
+    def run_from_command_line(cls, args=None):
+        parser = cls.get_argument_parser()
+        args = parser.parse_args(args)
+        stream_plotter = cls(
+            args.config,
+            args.topic_name,
+            streamlevel=args.logger_stream_level,
+            filelevel=args.logger_file_level,
+            consumer_group_id=args.consumer_group_id,
+            update_secs=args.update_seconds,
+            mode=args.mode,
+            filepath_regex=args.download_regex,
+            output_dir=args.output_dir,
+            n_threads=args.n_threads,
+        )
+        processing_thread = Thread(target=stream_plotter.process_files_as_read)
+        processing_thread.start()
+        _ = animation.FuncAnimation(
+            stream_plotter.fig, stream_plotter.update_plot, interval=500, save_count=100
+        )
+        plt.show()
+        timestamp_string = datetime.strftime(
+            datetime.now(), SensorPushCSVWriter.FILENAME_TIMESTAMP_FORMAT
+        )
+        plt.savefig(
+            stream_plotter._output_dir / f"plots_{timestamp_string}.png", bbox="tight"
+        )
+        processing_thread.join()
+        stream_plotter.close()
+        msg = (
+            f"Read {stream_plotter.n_msgs_read} message"
+            f"{'s' if stream_plotter.n_msgs_read!=1 else ''}, "
+        )
+        msg += (
+            f"processed {stream_plotter.n_msgs_processed} message"
+            f"{'s' if stream_plotter.n_msgs_processed!=1 else ''}, "
+        )
+        msg += (
+            f"and processed {stream_plotter.n_processed_files} file"
+            f"{'s' if stream_plotter.n_processed_files!=1 else ''}."
+        )
+        if stream_plotter.n_processed_files > 0:
+            msg += f" Up to {cls.N_RECENT_FILES} most recent shown below:\n\t"
+            msg += "\n\t".join(
+                [str(fp) for fp in stream_plotter.recent_processed_filepaths]
+            )
+        stream_plotter.logger.info(msg)
+
+
+def main(args=None):
+    """Run the StreamPlotter"""
+    SensorPushStreamPlotter.run_from_command_line(args)
+
+
+if __name__ == "__main__":
+    main()

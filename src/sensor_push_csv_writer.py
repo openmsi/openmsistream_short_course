@@ -7,45 +7,12 @@ import asyncio
 from datetime import datetime
 from bleak import BleakClient
 from bleak.exc import BleakDeviceNotFoundError
-from openmsitoolbox import Runnable, OpenMSIArgumentParser, ControlledProcessAsync
-from openmsitoolbox.argument_parsing.parser_callbacks import positive_int
+from openmsitoolbox import Runnable, ControlledProcessAsync
 from sensorpush import sensorpush as sp
+from argument_parser import SensorPushArgumentParser
 
 
-class SensorPushArgumentParser(OpenMSIArgumentParser):
-    """ArgumentParser for SensorPush activities"""
-
-    ARGUMENTS = {
-        **OpenMSIArgumentParser.ARGUMENTS,
-        "device_address": [
-            "positional",
-            {
-                "help": "The address (MAC or UUID) of the SensorPush device to connect to"
-            },
-        ],
-        "sampling_interval": [
-            "optional",
-            {
-                "help": (
-                    "How often samples should be read from the sensor and written out "
-                    "to CSV files (seconds). Inexact, as there is some lag in "
-                    "communicating with sensors."
-                ),
-                "default": 5,
-            },
-        ],
-        "n_connection_retries": [
-            "optional",
-            {
-                "help": "Number of retries to use for connecting to a SensorPush device",
-                "default": 5,
-                "type": positive_int,
-            },
-        ],
-    }
-
-
-class TemperatureHumidityCSVWriter(ControlledProcessAsync, Runnable):
+class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
     """Writes out CSV files of timestamped temperature/humidity measurements from
     a SensorPush HT.w device on a given time interval until the user shuts it down
     """
@@ -220,8 +187,8 @@ class TemperatureHumidityCSVWriter(ControlledProcessAsync, Runnable):
 
 
 def main(args=None):
-    """Run the TemperatureHumidityCSVWriter"""
-    TemperatureHumidityCSVWriter.run_from_command_line(args)
+    """Run the SensorPushCSVWriter"""
+    SensorPushCSVWriter.run_from_command_line(args)
 
 
 if __name__ == "__main__":

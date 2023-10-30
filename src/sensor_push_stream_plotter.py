@@ -27,6 +27,9 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
         self._format_plot()
 
     def update_plot(self, _):
+        """Called as part of a FuncAnimation to update an animated plot based on the
+        current state of the measurement dataframe
+        """
         if self.measurements_df is None or len(self.measurements_df) < 1:
             return
         for axs in self.ax:
@@ -81,13 +84,6 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
                     [self.measurements_df, new_df], ignore_index=True
                 )
 
-    # @classmethod
-    # def get_command_line_arguments(cls):
-    #     superargs, superkwargs = super().get_command_line_arguments()
-    #     args = [*superargs]
-    #     kwargs = {**superkwargs}
-    #     return args, kwargs
-
     @classmethod
     def run_from_command_line(cls, args=None):
         parser = cls.get_argument_parser()
@@ -113,21 +109,14 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
         timestamp_string = datetime.strftime(
             datetime.now(), SensorPushCSVWriter.FILENAME_TIMESTAMP_FORMAT
         )
-        plt.savefig(
-            stream_plotter._output_dir / f"plots_{timestamp_string}.png", bbox="tight"
+        stream_plotter.fig.savefig(
+            stream_plotter._output_dir / f"plots_{timestamp_string}.png",
+            bbox_inches="tight",
         )
         processing_thread.join()
         stream_plotter.close()
         msg = (
-            f"Read {stream_plotter.n_msgs_read} message"
-            f"{'s' if stream_plotter.n_msgs_read!=1 else ''}, "
-        )
-        msg += (
-            f"processed {stream_plotter.n_msgs_processed} message"
-            f"{'s' if stream_plotter.n_msgs_processed!=1 else ''}, "
-        )
-        msg += (
-            f"and processed {stream_plotter.n_processed_files} file"
+            f"Processed {stream_plotter.n_processed_files} file"
             f"{'s' if stream_plotter.n_processed_files!=1 else ''}."
         )
         if stream_plotter.n_processed_files > 0:

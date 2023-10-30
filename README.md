@@ -34,12 +34,24 @@ Run with:
 
 This program will print a single temperature and humidity reading from the sensor at `[device_address]` (which can be found using the program above).
 
-### temperature_humidity_csv_writer
+### sensor_push_csv_writer
 
 Run with:
 
-    python src/temperature_humidity_csv_writer.py [device_address] [output_dir]
+    python src/sensor_push_csv_writer.py [device_address] [output_dir]
 
 This program will connect to the device at `[device_address]` and write out a small CSV file of temperature (in degrees Celcius) and relative humidity (in %) to `[output_dir]` every five seconds until it's shut down by typing `q` or `quit` in the terminal. At any time, you can type `c` or `check` to see how many files have been written out so far.
 
 Add `-h` to the command above to see other options, including using a custom sampling interval by giving the `--sampling_interval` argument.
+
+### sensor_push_stream_plotter.py
+
+Run with:
+
+    python src/sensor_push_stream_plotter.py --topic_name [topic_name]
+
+This program will pop up a plot of temperature and humidity measurements labeled by device ID, and the plot will update while the program is running based on measurements read from files uploaded to the `[topic_name]` topic (in the same format as written by `sensor_push_csv_writer.py`). When the program is quit it will save the final version of the plot in the output directory (`SensorPushStreamPlotter_output` in the current directory, by default).
+
+This is an example of an OpenMSIStream [DataFileStreamProcessor](https://openmsistream.readthedocs.io/en/latest/user_info/base_classes/data_file_stream_processor.html), and as such its Kafka configs and many other operating modes are configurable from the command line. Add the "-h" flag to see the full list of options, and see the docs [here](https://openmsistream.readthedocs.io/en/latest/user_info/main_programs.html#configuration-files) for more information on OpenMSIStream config files.
+
+The program can be checked by typing `c` in the terminal while it's running. To quit it you can type `q` in the terminal and close the Matplotlib GUI window.

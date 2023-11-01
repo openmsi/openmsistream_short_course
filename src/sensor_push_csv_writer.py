@@ -145,7 +145,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
     def _on_shutdown(self):
         """Print the total number of files written out when the program is quit"""
         msg = (
-            f"{self.n_files_written} file{'s' if self.n_files_written!=0 else ''} "
+            f"{self.n_files_written} file{'s' if self.n_files_written!=1 else ''} "
             f"written from {datetime.strftime(self.start_time,self.PRINT_TIMESTAMP_FORMAT)} "
             f"to {datetime.strftime(datetime.now(),self.PRINT_TIMESTAMP_FORMAT)}"
         )

@@ -25,6 +25,7 @@ class SensorPushArgumentParser(OpenMSIStreamArgumentParser):
                     "communicating with sensors."
                 ),
                 "default": 5,
+                "type": positive_int,
             },
         ],
         "n_connection_retries": [

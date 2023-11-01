@@ -36,9 +36,9 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
             axs.clear()
         self._format_plot()
         for dev_id in self.measurements_df["device_id"].unique():
-            device_df = self.measurements_df[
+            device_df = (self.measurements_df[
                 self.measurements_df["device_id"] == dev_id
-            ]
+            ]).copy()
             device_df.sort_values("timestamp", inplace=True)
             timestamps = device_df["timestamp"]
             temps = device_df["temperature"]

@@ -6,3 +6,5 @@ sensorpush-bleak >= 1.0.7
 openmsitoolbox >= 1.2.0
 # OpenMSIStream for streaming data
 openmsistream >= 1.7.0
+# ipykernel to run Jupyter notebooks
+ipykernel >= 6.27.1

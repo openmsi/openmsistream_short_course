@@ -1,5 +1,7 @@
 # pandas for organizing data in dataframes
 pandas >= 2.1.2
+# scipy for example analysis finding peaks in XRD data
+scipy >= 1.11.4
 # Python wrapper around the SensorPush Bluetooth API
 sensorpush-bleak >= 1.0.7
 # OpenMSIToolbox for ControlledProcess

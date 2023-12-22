@@ -2,6 +2,8 @@
 pandas >= 2.1.2
 # scipy for example analysis finding peaks in XRD data
 scipy >= 1.11.4
+# lmfit for nonlinear least squares fitting to peaks in XRD data
+lmfit >= 1.2.2
 # Python wrapper around the SensorPush Bluetooth API
 sensorpush-bleak >= 1.0.7
 # OpenMSIToolbox for ControlledProcess

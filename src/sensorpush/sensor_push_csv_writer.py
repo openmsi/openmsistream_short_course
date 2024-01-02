@@ -9,7 +9,7 @@ from bleak import BleakClient
 from bleak.exc import BleakDeviceNotFoundError
 from openmsitoolbox import Runnable, ControlledProcessAsync
 from sensorpush import sensorpush as sp
-from argument_parser import SensorPushArgumentParser
+from .argument_parser import SensorPushArgumentParser
 
 
 class SensorPushCSVWriter(ControlledProcessAsync, Runnable):

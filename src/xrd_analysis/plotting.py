@@ -1,11 +1,12 @@
 " Plotting functions for the example XRD analysis "
 
 # imports
+import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
 
-def plot_peak_segments(xrd_df, peak_segments):
+def plot_peak_segments(xrd_df, peak_segments, save=None):
     """Make a plot showing a full XRD dataset with the peak locations indicated,
     colored by their segments.
 
@@ -14,6 +15,8 @@ def plot_peak_segments(xrd_df, peak_segments):
             and "count" columns
         peak_segments (list): The list of "peak segment" dictionaries
             (from get_peak_segments)
+        save (pathlib.Path, optional): The path to a file where the plot should be
+            written out. If not given, the plot will be displayed instead.
     """
     color_names = list(mcolors.TABLEAU_COLORS.keys())
     _, ax = plt.subplots(figsize=(8.0, 4.0))
@@ -30,10 +33,16 @@ def plot_peak_segments(xrd_df, peak_segments):
             ax.axvline(peak_angle, color=color, linewidth=1, ymax=0.8, alpha=0.7)
     ax.set_xlabel("angle")
     ax.set_ylabel("counts")
-    plt.show()
+    if isinstance(save, pathlib.Path):
+        if not save.parent.is_dir():
+            save.parent.mkdir(parents=True)
+        plt.savefig(save, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 
 
-def plot_segment_peak_fit(seg_df, fit_result):
+def plot_segment_peak_fit(seg_df, fit_result, save=None):
     """Make a plot of the fit to a particular segment of XRD data, showing the
     combined model fit as well as the background and peak components.
 
@@ -41,6 +50,8 @@ def plot_segment_peak_fit(seg_df, fit_result):
         seg_df (pandas.DataFrame): The dataframe of the segment of the XRD data to plot
         fit_result (lmfit.model.ModelResult): The ModelResult object from the fit to the
             segment of XRD data
+        save (pathlib.Path, optional): The path to a file where the plot should be
+            written out. If not given, the plot will be displayed instead.
     """
     _, ax = plt.subplots(figsize=(8.0, 4.0))
     ax.plot(seg_df["angle"], fit_result.best_fit, label="model fit")
@@ -76,5 +87,11 @@ def plot_segment_peak_fit(seg_df, fit_result):
     )
     ax.set_xlabel("angle")
     ax.set_ylabel("counts")
-    ax.legend(loc="best")
-    plt.show()
+    ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
+    if isinstance(save, pathlib.Path):
+        if not save.parent.is_dir():
+            save.parent.mkdir(parents=True)
+        plt.savefig(save, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()

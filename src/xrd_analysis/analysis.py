@@ -8,6 +8,8 @@ from utils import get_angle_interval_size
 
 # The minimum distance between peaks (in intervals)
 MIN_N_INTERVAL_SEPARATION = 5
+# Scaling factor for the std dev in the prominence requirement in the find_peaks function
+PROMINENCE_SCALE_FACTOR = 0.8
 # The window length for the find_peaks call (in intervals)
 WINDOW_LENGTH = 50
 # Peaks will not be found below this angle
@@ -35,7 +37,8 @@ def get_peak_segments(xrd_df):
     # run peak finding in the counts data
     peaks, _ = scipy.signal.find_peaks(
         xrd_df["counts"],
-        prominence=np.std(xrd_df["counts"]),
+        # prominence=np.std(xrd_df["counts"]),
+        prominence=PROMINENCE_SCALE_FACTOR * np.std(xrd_df["counts"]),
         wlen=WINDOW_LENGTH,
         distance=MIN_N_INTERVAL_SEPARATION,
     )
@@ -60,6 +63,7 @@ def get_peak_segments(xrd_df):
                 for p_a, p_c in zip(peak_angles, peak_counts)
                 if p_a >= seg_min_angle - 0.5 * neighborhood_size
                 and p_a <= seg_max_angle + 0.5 * neighborhood_size
+                and p_a >= MIN_ANGLE
             ]
         for p_a, p_c in peaks_in_seg:
             peak_angles_done.add(p_a)
@@ -87,6 +91,14 @@ def get_peak_segments(xrd_df):
             }
         )
     return peak_segments
+
+
+# The minimum peak height
+MIN_PEAK_HEIGHT = 10
+# Peaks cannot have sigma wider than this scale factor times the segment length
+MAX_SIGMA_SCALE_FACTOR = 0.7
+# Minimum peak sigma
+MIN_SIGMA = 0.02
 
 
 def get_segment_peak_fit(xrd_df, peak_seg):
@@ -122,15 +134,57 @@ def get_segment_peak_fit(xrd_df, peak_seg):
         model += lmfit.models.PseudoVoigtModel(prefix=f"voigt_{i_p}_")
         make_params_kwargs[f"voigt_{i_p}_amplitude"] = seg_peak_counts
         make_params_kwargs[f"voigt_{i_p}_center"] = seg_peak_angle
-        make_params_kwargs[f"voigt_{i_p}_sigma"] = 0.1 * (
-            np.max(seg_df["angle"]) - np.min(seg_df["angle"])
-        )
+        make_params_kwargs[f"voigt_{i_p}_sigma"] = 0.05
         make_params_kwargs[f"voigt_{i_p}_gamma"] = 1
     # Make the parameters object and perform the fit
     params = model.make_params(**make_params_kwargs)
-    # for i_p in range(len(peak_seg["peak_angles"])):
-    #     params[f"voigt_{i_p}_amplitude"].min = 0
-    #     params[f"voigt_{i_p}_center"].min = np.min(seg_df["angle"])
-    #     params[f"voigt_{i_p}_center"].max = np.max(seg_df["angle"])
     result = model.fit(seg_df["counts"], params, x=seg_df["angle"])
+    # Iteratively filter out invalid peak components
+    last_valid_components = None
+    valid_components = []
+    while last_valid_components is None or valid_components != last_valid_components:
+        last_valid_components = valid_components
+        for component in result.model.components:
+            # keep the linear background no matter what
+            if not component.prefix.startswith("voigt"):
+                valid_components.append(component)
+                continue
+            height_value = result.params[f"{component.prefix}height"].value
+            center_value = result.params[f"{component.prefix}center"].value
+            sigma_value = result.params[f"{component.prefix}sigma"].value
+            is_valid = True
+            # filter out anything within 1 sigma of another, taller peak
+            for other_component in result.model.components:
+                if (
+                    not other_component.prefix.startswith("voigt")
+                ) or other_component == component:
+                    continue
+                if (
+                    abs(
+                        center_value
+                        - result.params[f"{other_component.prefix}center"].value
+                    )
+                    / sigma_value
+                    < 1
+                    and height_value
+                    < result.params[f"{other_component.prefix}height"].value
+                ):
+                    is_valid = False
+            # make some requirements about the height, center location, and sigma
+            if (
+                height_value < MIN_PEAK_HEIGHT
+                or center_value < peak_seg["min"]
+                or center_value > peak_seg["max"]
+                or sigma_value
+                > MAX_SIGMA_SCALE_FACTOR
+                * (np.max(seg_df["angle"]) - np.min(seg_df["angle"]))
+                or sigma_value < MIN_SIGMA
+            ):
+                is_valid = False
+            if is_valid:
+                valid_components.append(component)
+        new_model = valid_components[0]
+        for comp in valid_components[1:]:
+            new_model = new_model + comp
+        result = new_model.fit(seg_df["counts"], params, x=seg_df["angle"])
     return result

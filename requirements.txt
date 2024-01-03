@@ -1,14 +1,16 @@
+# ipykernel to run Jupyter notebooks
+ipykernel >= 6.27.1
+# lmfit for nonlinear least squares fitting to peaks in XRD data
+lmfit >= 1.2.2
+# OpenMSIStream for streaming data
+openmsistream >= 1.7.0
+# OpenMSIToolbox for ControlledProcess
+openmsitoolbox >= 1.2.0
 # pandas for organizing data in dataframes
 pandas >= 2.1.2
 # scipy for example analysis finding peaks in XRD data
 scipy >= 1.11.4
-# lmfit for nonlinear least squares fitting to peaks in XRD data
-lmfit >= 1.2.2
 # Python wrapper around the SensorPush Bluetooth API
 sensorpush-bleak >= 1.0.7
-# OpenMSIToolbox for ControlledProcess
-openmsitoolbox >= 1.2.0
-# OpenMSIStream for streaming data
-openmsistream >= 1.7.0
-# ipykernel to run Jupyter notebooks
-ipykernel >= 6.27.1
+# SQLAlchemy for the example analysis with XRD data
+sqlalchemy >= 2.0.25

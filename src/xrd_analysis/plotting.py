@@ -95,3 +95,42 @@ def plot_segment_peak_fit(seg_df, fit_result, save=None):
         plt.close()
     else:
         plt.show()
+
+
+def plot_dataset_with_fitted_peaks(dataset, datapoints, peaks, save=None):
+    """Plots (angle, counts) points for a single dataset with vertical lines at each of
+    its peak locations.
+
+    Args:
+        dataset (sql_tables.DataSet): the DataSet object associated with the given points
+        datapoints (list(sql_tables.DataPoint)): A list of DataPoint objects for the DataSet
+        peaks (list(sql_tables.FittedPeak)): A list of FittedPeak objects for the DataSet
+        save (pathlib.Path, optional): The path to a file where the plot should be
+            written out. If not given, the plot will be displayed instead.
+    """
+    color_names = list(mcolors.TABLEAU_COLORS.keys())
+    _, ax = plt.subplots(figsize=(12.0, 4.0))
+    ax.plot(
+        [d.angle for d in datapoints],
+        [d.counts for d in datapoints],
+        marker=".",
+        color="k",
+        linestyle="none",
+    )
+    for i_peak, peak in enumerate(peaks):
+        ax.axvline(
+            peak.fitted_center,
+            color=color_names[i_peak % len(color_names)],
+            label=f"$\\mu$ = {peak.fitted_center:.2f}, $\\sigma$ = {peak.fitted_sigma:.2f}",
+        )
+    ax.set_xlabel("angle")
+    ax.set_ylabel("counts")
+    ax.set_title(dataset.file_name)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0), ncol=2)
+    if isinstance(save, pathlib.Path):
+        if not save.parent.is_dir():
+            save.parent.mkdir(parents=True)
+        plt.savefig(save, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()

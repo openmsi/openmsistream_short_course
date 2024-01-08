@@ -2,7 +2,6 @@
 
 # imports
 import pathlib
-from io import BytesIO
 
 
 def get_raw_file_name(xrd_file_path_or_bytesio):

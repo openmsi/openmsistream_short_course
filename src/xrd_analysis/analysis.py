@@ -4,7 +4,10 @@
 import numpy as np
 import scipy
 import lmfit
-from utils import get_angle_interval_size
+try:
+    from utils import get_angle_interval_size
+except ModuleNotFoundError:
+    from .utils import get_angle_interval_size
 
 # The minimum distance between peaks (in intervals)
 MIN_N_INTERVAL_SEPARATION = 5

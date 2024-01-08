@@ -1,21 +1,39 @@
 " Various utility functions used in the example XRD analysis "
 
+# imports
+import pathlib
+from io import BytesIO
 
-def get_raw_file_name(xrd_file_path):
+
+def get_raw_file_name(xrd_file_path_or_bytesio):
     """Returns the raw file name from the header of the given XRD file
 
     Args:
-        xrd_file_path (pathlib.Path): The path to an XRD file with its original raw file
-            name in the second field of the second line
+        xrd_file_path_or_bytesio (str, pathlib.Path, or io.BytesIO): The path to an XRD
+            file with its original raw file name in the second field of the second line
+            (or BytesIO object of the same)
 
     Returns:
         The raw file name from the header of the file as a string
     """
-    with open(xrd_file_path, "r") as fp:
-        _ = fp.readline()
-        line_2 = fp.readline()
+    if isinstance(xrd_file_path_or_bytesio, pathlib.Path) or isinstance(
+        xrd_file_path_or_bytesio, str
+    ):
+        with open(xrd_file_path_or_bytesio, "r") as fp:
+            _ = fp.readline()
+            line_2 = fp.readline()
+    elif hasattr(xrd_file_path_or_bytesio, "readline"):
+        _ = xrd_file_path_or_bytesio.readline()
+        line_2 = xrd_file_path_or_bytesio.readline().decode()
+    else:
+        errmsg = (
+            f"ERROR: expected path or readable for {xrd_file_path_or_bytesio} "
+            f" but got {type(xrd_file_path_or_bytesio)} instead!"
+        )
+        raise ValueError(errmsg)
     raw_file_name = line_2.split(",")[-1]
     return raw_file_name
+
 
 def get_angle_interval_size(xrd_angles_column):
     """Given the "angle" column of an XRD dataframe, return the size of the steps between

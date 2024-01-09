@@ -3,7 +3,7 @@ ipykernel >= 6.27.1
 # lmfit for nonlinear least squares fitting to peaks in XRD data
 lmfit >= 1.2.2
 # OpenMSIStream for streaming data
-openmsistream >= 1.7.0
+openmsistream >= 1.7.9
 # OpenMSIToolbox for ControlledProcess
 openmsitoolbox >= 1.2.0
 # pandas for organizing data in dataframes

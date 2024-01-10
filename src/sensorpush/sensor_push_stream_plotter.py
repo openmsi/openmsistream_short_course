@@ -36,9 +36,9 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
             axs.clear()
         self._format_plot()
         for dev_id in self.measurements_df["device_id"].unique():
-            device_df = (self.measurements_df[
-                self.measurements_df["device_id"] == dev_id
-            ]).copy()
+            device_df = (
+                self.measurements_df[self.measurements_df["device_id"] == dev_id]
+            ).copy()
             device_df.sort_values("timestamp", inplace=True)
             timestamps = device_df["timestamp"]
             temps = device_df["temperature"]
@@ -48,7 +48,12 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
         for axs in self.ax:
             axs.relim()
             axs.autoscale_view()
-        self.ax[0].legend(loc="upper left")
+        n_devices = len(self.measurements_df["device_id"].unique())
+        if n_devices > 0:
+            self.ax[0].legend(
+                loc="upper left", bbox_to_anchor=(1.0, 1.0), ncol=max(1,int(n_devices/8))
+            )
+        self.fig.tight_layout()
 
     def _format_plot(self):
         self.ax[0].set_title("Temperature measurements")
@@ -88,18 +93,8 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
     def run_from_command_line(cls, args=None):
         parser = cls.get_argument_parser()
         args = parser.parse_args(args)
-        stream_plotter = cls(
-            args.config,
-            args.topic_name,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            consumer_group_id=args.consumer_group_id,
-            update_secs=args.update_seconds,
-            mode=args.mode,
-            filepath_regex=args.download_regex,
-            output_dir=args.output_dir,
-            n_threads=args.n_threads,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        stream_plotter = cls(*init_args, **init_kwargs)
         processing_thread = Thread(target=stream_plotter.process_files_as_read)
         processing_thread.start()
         _ = animation.FuncAnimation(

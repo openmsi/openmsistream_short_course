@@ -24,7 +24,7 @@ class SensorPushArgumentParser(OpenMSIStreamArgumentParser):
                     "to CSV files (seconds). Inexact, as there is some lag in "
                     "communicating with sensors."
                 ),
-                "default": 5,
+                "default": 10,
                 "type": positive_int,
             },
         ],
@@ -36,4 +36,10 @@ class SensorPushArgumentParser(OpenMSIStreamArgumentParser):
                 "type": positive_int,
             },
         ],
+        "name": [
+            "optional",
+            {
+                "help": "An informal name to associate with the given SensorPush device",
+            }
+        ]
     }

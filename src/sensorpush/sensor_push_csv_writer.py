@@ -9,7 +9,9 @@ from bleak import BleakClient
 from bleak.exc import BleakDeviceNotFoundError
 from openmsitoolbox import Runnable, ControlledProcessAsync
 from sensorpush import sensorpush as sp
-from .argument_parser import SensorPushArgumentParser
+
+# pylint: disable=wrong-import-order, import-error
+from argument_parser import SensorPushArgumentParser
 
 
 class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
@@ -29,6 +31,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
         self,
         device_address,
         output_dir,
+        name,
         sampling_interval,
         n_connection_retries,
         **other_kwargs,
@@ -36,6 +39,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
         super().__init__(**other_kwargs)
         self.device_address = device_address
         self.output_dir = output_dir
+        self.name = name
         self.sampling_interval = sampling_interval
         self.n_connection_retries = n_connection_retries
         self.start_time = datetime.now()
@@ -77,8 +81,9 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
             timestamp = reading[0]
             temp_c = reading[1]
             hum = reading[2]
+            dev_name = self.name if self.name is not None else self.device_address
             csv_filename = (
-                f"readings_{self.device_address}_"
+                f"readings_{dev_name}_"
                 f"{datetime.strftime(timestamp,self.FILENAME_TIMESTAMP_FORMAT)}"
                 ".csv"
             )
@@ -166,6 +171,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
             *super_args,
             "device_address",
             "output_dir",
+            "name",
             "sampling_interval",
             "n_connection_retries",
         ]
@@ -179,6 +185,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
         csv_writer = cls(
             args.device_address,
             args.output_dir,
+            args.name,
             args.sampling_interval,
             args.n_connection_retries,
             streamlevel=args.logger_stream_level,

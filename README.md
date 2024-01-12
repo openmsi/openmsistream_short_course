@@ -1,57 +1,27 @@
-# SensorPush Activity
-Code utilities for the SensorPush-based streaming activity at the OpenMSIStream short course
+# OpenMSIStream Short Course
 
-The OpenMSIStream short course will involve an example of a streaming workflow using [SensorPush HT.w sensors](https://www.sensorpush.com/products/p/ht-w). Participants will use code in this repository (based on the [`sensorpush-bleak`](https://github.com/cryptomcgrath/sensorpush-bleak) library) to simplify the process of connecting to their devices using the [`Bleak`](https://bleak.readthedocs.io/en/latest/index.html) Bluetooth Low Energy (LE) client and retrieiving timestamped temperature and humidity data.
+Notebooks, code, and other files needed for the OpenMSIStream Short Course taking place on the Johns Hopkins University campus on January 18th & 19th, 2024. For help beyond this repository, the [official OpenMSIStream documentation](https://openmsistream.readthedocs.io/en/latest/index.html) is hosted on readthedocs.
 
-## Installation
+Please get started by working through the steps described in the [setup cheat sheet](https://github.com/openmsi/openmsistream_short_course/blob/main/cheat_sheets/01_setup_for_activities.md).
 
-Create and activate a new Conda environment:
+Below are details on what you can find in this repository.
 
-    conda create -n sensorpush python=3.9
-    conda activate sensorpush
+## cheat_sheets
 
-Clone this repository, cd in to it, and then install the dependencies from the requirements file:
+This folder holds two markdown documents listing precise commands to run. 
 
-    pip install -r requirements.txt
+The first ("setup_for_activities") has instructions for getting your environment set up. You should work through what's described there *before the start of the afternoon session* on the first day of the course.
 
-## Programs
+The second document ("sensorpush_activity") has details on the programs we'll run during the SensorPush activity, for the second half of the afternoon on the first day. You don't need any further set up for that, it's just the commands we'll run together during that activity.
 
-A brief overview of the programs in this repo
+## config_files
 
-### get_device_addresses
+This folder holds some config files we'll need to run OpenMSIStream programs.
 
-Run with:
-    
-    python src/sensorpush/get_device_addresses.py 
+## notebooks
 
-This program will print the address of the first SensorPush HT.w device it identifies in the local BLE space. Run it with the -h flag to see other options, including waiting for a specified period of time and printing out every unique device found instead of stopping at the first.
+This folder has three Jupyter notebooks in it. The first ("local_producer") demonstrates two different ways to get files into topics using Producer-side programs. The second ("consumers") demonstrates three different Consumer-side applications. The third (xrd_analysis) is an example analysis of some background-subtracted 1-D x-ray diffraction data. We'll work through all of these notebooks together.
 
-### get_readings
+## src
 
-Run with:
-
-    python src/sensorpush/get_readings.py [device_address]
-
-This program will print a single temperature and humidity reading from the sensor at `[device_address]` (which can be found using the program above).
-
-### sensor_push_csv_writer
-
-Run with:
-
-    python -m src.sensorpush.sensor_push_csv_writer [device_address] [output_dir]
-
-This program will connect to the device at `[device_address]` and write out a small CSV file of temperature (in degrees Celcius) and relative humidity (in %) to `[output_dir]` every five seconds until it's shut down by typing `q` or `quit` in the terminal. At any time, you can type `c` or `check` to see how many files have been written out so far.
-
-Add `-h` to the command above to see other options, including using a custom sampling interval by giving the `--sampling_interval` argument.
-
-### sensor_push_stream_plotter.py
-
-Run with:
-
-    python -m src.sensorpush.sensor_push_stream_plotter --topic_name [topic_name]
-
-This program will pop up a plot of temperature and humidity measurements labeled by device ID, and the plot will update while the program is running based on measurements read from files uploaded to the `[topic_name]` topic (in the same format as written by `sensor_push_csv_writer.py`). When the program is quit it will save the final version of the plot in the output directory (`SensorPushStreamPlotter_output` in the current directory, by default).
-
-This is an example of an OpenMSIStream [DataFileStreamProcessor](https://openmsistream.readthedocs.io/en/latest/user_info/base_classes/data_file_stream_processor.html), and as such its Kafka configs and many other operating modes are configurable from the command line. Add the "-h" flag to see the full list of options, and see the docs [here](https://openmsistream.readthedocs.io/en/latest/user_info/main_programs.html#configuration-files) for more information on OpenMSIStream config files.
-
-The program can be checked by typing `c` in the terminal while it's running. To quit it you can type `q` in the terminal and close the Matplotlib GUI window.
+This folder has more formal Python code in it. The "sensorpush" folder has code for working with SensorPush devices, and the "xrd_analysis" folder has code used in the XRD data example analysis. You can use any of this code as reference, but we won't need to edit it directly during the course.

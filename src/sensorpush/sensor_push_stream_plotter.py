@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from openmsitoolbox import Runnable
 from openmsistream import DataFileStreamProcessor
-from .argument_parser import SensorPushArgumentParser
-from .sensor_push_csv_writer import SensorPushCSVWriter
+from argument_parser import SensorPushArgumentParser # pylint: disable=import-error
+from sensor_push_csv_writer import SensorPushCSVWriter # pylint: disable=import-error
 
 
 class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):

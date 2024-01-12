@@ -112,7 +112,7 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
 
     async def _connect_to_client(self):
         """Connect to the bleak client"""
-        self.logger.debug(
+        self.logger.info(
             f"Connecting to SensorPush device at {self.device_address}..."
         )
         self._client = BleakClient(self.device_address)
@@ -167,6 +167,8 @@ class SensorPushCSVWriter(ControlledProcessAsync, Runnable):
     def get_command_line_arguments(cls):
         super_args, super_kwargs = super().get_command_line_arguments()
         super_args.pop(super_args.index("logger_file_level"))
+        super_args.pop(super_args.index("logger_file_path"))
+        super_args.pop(super_args.index("update_seconds"))
         cl_args = [
             *super_args,
             "device_address",

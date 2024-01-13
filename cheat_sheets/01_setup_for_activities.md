@@ -81,7 +81,7 @@ Values for these variables will be provided to you on the morning of the course.
 
 ## SensorPush devices
 
-When you've completed to above steps, you can collect your SensorPush device and set up your access to it. With your device nearby, cd to this repository and run the following command:
+When you've completed to above steps, you can collect your SensorPush device and set up your access to it. The SensorPush is a Bluetooth Low Energy (BLE) device so you should be sure your laptop has bluetooth turned on. This activity is customized to interact only with the SensorPush HT.w device so if you are doing this activity outside the short course be sure to use the HT.w, second generation or newer model; you'll have to modify the code to work with other BLE devices. With your device nearby, cd to this repository and run the following command:
 
     python src/sensorpush/get_device_addresses.py --all
 

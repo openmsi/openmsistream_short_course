@@ -18,15 +18,15 @@ Next we'll get an environment set up to install all of the code we'll run in thi
 
 We'll install all of the dependencies for the software we'll use in this course in a new Conda environment. In a new terminal window, type:
 
-    conda create -n openmsistream_short_course python=3.9
+    conda create -n openmsistream_short_course python=3.9 -y
 
-and hit enter until it completes. This will create your new Conda environment. Then, activate your new environment with:
+This will create your new Conda environment. Then, activate your new environment with:
 
     conda activate openmsistream_short_course
 
 You should then see "(openmsistream_short_course)" to the left of your terminal prompt, indicating the environment is active. **You will need to activate the environment in every terminal you open for this course.**
 
-### WINDOWS ONLY: Conda environment variable setup
+### Conda environment variable setup (WINDOWS ONLY)
 
 If you're on a Windows system, you'll need to set an environment variable value to make sure that globally-installed DLL files can be found in your Cond environments. To do that, type:
 
@@ -40,11 +40,11 @@ to set the variable value and restart your environment.
 
 Next we'll install the "libsodium" dependency using the Conda package manager. Type:
 
-    conda install -c anaconda libsodium
+    conda install -c anaconda libsodium -y
 
-and hit enter when prompted until it completes.
+and allow the installtion to completes.
 
-### MAC ONLY: Install librdkafka
+### Install librdkafka (MAC ONLY)
 
 If you're working on a Mac system, you'll need a *system-wide* install of librdkafka. The easiest way to install librdkafka is to use the "homebrew" package manager. You can find instructions for installing homebrew [here](https://brew.sh/). With homebrew installed, you can install librdkafka by typing:
 

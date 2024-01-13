@@ -46,7 +46,11 @@ and allow the installtion to completes.
 
 ### Install librdkafka (MAC ONLY)
 
-If you're working on a Mac system, you'll need a *system-wide* install of librdkafka. The easiest way to install librdkafka is to use the "homebrew" package manager. You can find instructions for installing homebrew [here](https://brew.sh/). With homebrew installed, you can install librdkafka by typing:
+If you're working on a Mac system, you'll need a *system-wide* install of librdkafka. You can check if it is already installed with:
+
+    /usr/bin/xcodebuild -version
+
+If it's not installed, the easiest way to install librdkafka is to use the "homebrew" package manager. You can find instructions for installing homebrew [here](https://brew.sh/). With homebrew installed, you can install librdkafka by typing:
 
     xcode-select --install
     brew install librdkafka

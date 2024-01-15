@@ -10,9 +10,15 @@ import sqlalchemy as sqa
 from sqlalchemy.orm import scoped_session, sessionmaker
 import pandas as pd
 from openmsistream import DataFileStreamProcessor
-from .utils import get_raw_file_name
-from .analysis import get_peak_segments, get_segment_peak_fit
-from .sql_tables import (
+
+# pylint: disable=import-error
+from utils import get_raw_file_name
+
+# pylint: disable=import-error
+from analysis import get_peak_segments, get_segment_peak_fit
+
+# pylint: disable=import-error
+from sql_tables import (
     ORMBase,
     DataSet,
     DataPoint,
@@ -46,7 +52,7 @@ class XRDAnalysisStreamProcessor(DataFileStreamProcessor):
     def add_datafile_to_db(self, datafile, session):
         """Add the given datafile to the DB using the given session. This code is almost
         completely copy/pasted from the analysis notebook.
-        
+
         Args:
             datafile (openmsistream.data_file_io.DownloadDataFile): The data file that's
                 been read from the topic
@@ -162,7 +168,10 @@ class XRDAnalysisStreamProcessor(DataFileStreamProcessor):
         parser.add_argument(
             "--connection_string",
             default="sqlite:///xrd_analysis.sqlite",
-            help="The SQLAlchemy connection string for connecting to the output DB",
+            help=(
+                "The SQLAlchemy connection string for connecting to the output DB "
+                "(default = 'sqlite:///xrd_analysis.sqlite')"
+            ),
         )
         parser.add_argument(
             "--drop_existing",

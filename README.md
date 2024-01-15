@@ -8,11 +8,13 @@ Below are details on what you can find in this repository.
 
 ## cheat_sheets
 
-This folder holds two markdown documents listing precise commands to run. 
+This folder holds three markdown documents listing precise commands to run. 
 
 The first ("setup_for_activities") has instructions for getting your environment set up. You should work through what's described there *before the start of the afternoon session* on the first day of the course.
 
 The second document ("sensorpush_activity") has details on the programs we'll run during the SensorPush activity, for the second half of the afternoon on the first day. You don't need any further set up for that, it's just the commands we'll run together during that activity.
+
+The third document ("xrd_analysis") lists commands you can use to upload files to the example XRD analysis topic and run the example XRDAnalysisStreamProcessor program.
 
 ## config_files
 
@@ -25,3 +27,11 @@ This folder has three Jupyter notebooks in it. The first ("local_producer") demo
 ## src
 
 This folder has more formal Python code in it. The "sensorpush" folder has code for working with SensorPush devices, and the "xrd_analysis" folder has code used in the XRD data example analysis. You can use any of this code as reference, but we won't need to edit it directly during the course.
+
+## xrd_example_data_files
+
+This folder has four example data files in it. The data are background-subtracted 1D X-ray diffraction (XRD) spectra. These files are used in the example XRD Analysis that we'll go over on the second day of the course.
+
+## xrd_example_output
+
+This folder has a single SQLite database file in it. That database is an example of the output you should get from running the example XRD analysis, whether in the third notebook or using the example XRDAnalysisStreamProcessor. It's only here for your reference.

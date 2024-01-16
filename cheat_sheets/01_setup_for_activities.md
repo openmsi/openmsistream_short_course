@@ -4,7 +4,7 @@ We're going to be running a bunch of code together, and even writing some of our
 
 ## Installing miniconda
 
-Conda is an open source package and environment manager that runs on Windows, Mac, and Linux operating systems. It's one of the easiest ways to intall open source software packages and manage sequestered computing environments on your machine. We'll do everything for these activities in a special-made Conda environment, so that you can complete these activities without needing to permanently install stuff on your own machine.
+Conda is an open source package and environment manager that runs on Windows, Mac, and Linux operating systems. It's one of the easiest ways to install open source software packages and manage sequestered computing environments on your machine. We'll do everything for these activities in a special-made Conda environment, so that you can complete these activities without needing to permanently install stuff on your own machine.
 
 If you already have Anaconda or miniconda installed, you can skip to the next step. If not, you should install miniconda on your system. You can find instructions for how to do that in the docs on [this page](https://conda.io/projects/conda/en/latest/user-guide/install/index.html), and you can find installers for your system on [this page](https://docs.conda.io/projects/miniconda/en/latest/). Check [this section](https://docs.conda.io/projects/miniconda/en/latest/#quick-command-line-install) for the fastest way to install the latest version of miniconda on your system.
 
@@ -31,18 +31,19 @@ You should then see "(openmsistream_short_course)" to the left of your terminal 
 If you're on a Windows system, you'll need to set an environment variable value to make sure that globally-installed DLL files can be found in your Cond environments. To do that, type:
 
     conda env config vars set CONDA_DLL_SEARCH_MODIFICATION_ENABLE=1
+
+to set the variable value. Then deactivate and restart your environment:
+
     conda deactivate
     conda activate openmsistream_short_course
 
-to set the variable value and restart your environment.
+### Install libsodium & git
 
-### Install libsodium
+Next we'll install the "libsodium" dependency and the "git" library using the Conda package manager. Type:
 
-Next we'll install the "libsodium" dependency using the Conda package manager. Type:
+    conda install -c anaconda libsodium git -y
 
-    conda install -c anaconda libsodium -y
-
-and allow the installtion to completes.
+and allow the installation to complete.
 
 ### Install librdkafka (MAC ONLY)
 
@@ -62,7 +63,7 @@ And then you can install librdkafka by typing:
 
 ## Cloning and installing this repository
 
-Now we're ready to get the code that's in this repository! To do that, create a new folder called "short_course" on your Desktop, navigate to it in your terminal window, and type:
+Now we're ready to get the code that's in this repository! To do that, create a new folder called "short_course" on your Desktop, navigate to it in your terminal (or Anaconda PowerShell Prompt) window, and type:
 
     git clone https://github.com/openmsi/openmsistream_short_course.git
 
@@ -83,6 +84,18 @@ Using OpenMSIStream requires configuring access to a Kafka broker. There are a n
 - `KAFKA_CLUSTER_PASSWORD`
 
 Values for these variables will be provided to you on the morning of the course.
+
+To set an environment variable on Windows, use the following command:
+
+    [Environment]::SetEnvironmentVariable("VAR_NAME","VAR_VAL", [EnvironmentVariableTarget]::User)
+
+Replacing `VAR_NAME` and `VAR_VAL` with each variable name and value, respectively (leave the quotes in).
+
+To set an environment variable on Mac or Linux, add lines like:
+
+    export VAR_NAME=VAR_VAL
+
+To your shell .profile or .rc file. You will need to restart your shell by opening a new window for the changes to take effect.
 
 ## SensorPush devices
 

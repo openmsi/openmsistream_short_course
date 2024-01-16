@@ -4,30 +4,32 @@
 import numpy as np
 import scipy
 import lmfit
-try:
-    from utils import get_angle_interval_size
-except ModuleNotFoundError:
-    from .utils import get_angle_interval_size
-
-# The minimum distance between peaks (in intervals)
-MIN_N_INTERVAL_SEPARATION = 5
-# Scaling factor for the std dev in the prominence requirement in the find_peaks function
-PROMINENCE_SCALE_FACTOR = 0.8
-# The window length for the find_peaks call (in intervals)
-WINDOW_LENGTH = 50
-# Peaks will not be found below this angle
-MIN_ANGLE = 10
-# Minimum size (in intervals) of a segment around a particular peak or set of peaks
-NEIGHBORHOOD_INTERVALS = 100
+from utils import get_angle_interval_size  # pylint: disable=import-error
 
 
-def get_peak_segments(xrd_df):
+def get_peak_segments(
+    xrd_df,
+    neighborhood_intervals=100,
+    prominence_scale_factor=0.8,
+    window_length=50,
+    min_n_interval_separation=5,
+    min_angle=10,
+):
     """Return a list of dictionaries representing segments of the XRD data containing
     one or more peaks.
 
     Args:
         xrd_df (pandas.DataFrame): The dataframe of the entire XRD dataset with "angle"
             and "count" columns
+        neighborhood_intervals (int): Minimum size (in intervals) of a segment around
+            a particular peak or set of peaks (default = 100)
+        prominence_scale_factor (float): Scaling factor for the std dev in the prominence
+            requirement in the find_peaks function (default = 0.8)
+        window_length (int): The window length for the find_peaks call (in intervals)
+            (default = 50)
+        min_n_interval_separation (int): The minimum distance between peaks (in intervals)
+            (default = 5)
+        min_angle (float): Peaks below this angle will not be returned (default = 10)
 
     Returns:
         A list of segment dictionaries. Each dictionary in the list includes a "min"
@@ -36,14 +38,13 @@ def get_peak_segments(xrd_df):
     """
     # Get the distance between each datapoint in the dataframe
     interval_size = get_angle_interval_size(xrd_df["angle"])
-    neighborhood_size = NEIGHBORHOOD_INTERVALS * interval_size
+    neighborhood_size = neighborhood_intervals * interval_size
     # run peak finding in the counts data
     peaks, _ = scipy.signal.find_peaks(
         xrd_df["counts"],
-        # prominence=np.std(xrd_df["counts"]),
-        prominence=PROMINENCE_SCALE_FACTOR * np.std(xrd_df["counts"]),
-        wlen=WINDOW_LENGTH,
-        distance=MIN_N_INTERVAL_SEPARATION,
+        prominence=prominence_scale_factor * np.std(xrd_df["counts"]),
+        wlen=window_length,
+        distance=min_n_interval_separation,
     )
     peak_angles = xrd_df["angle"].iloc[peaks]
     peak_counts = xrd_df["counts"].iloc[peaks]
@@ -51,7 +52,7 @@ def get_peak_segments(xrd_df):
     peak_segments = []
     peak_angles_done = set()
     for peak_angle, peak_count in zip(peak_angles, peak_counts):
-        if peak_angle < MIN_ANGLE or peak_angle in peak_angles_done:
+        if peak_angle < min_angle or peak_angle in peak_angles_done:
             continue
         # Iteratively add peaks to the segment until a discrete neighborhood with some
         # number of peaks is found
@@ -66,7 +67,7 @@ def get_peak_segments(xrd_df):
                 for p_a, p_c in zip(peak_angles, peak_counts)
                 if p_a >= seg_min_angle - 0.5 * neighborhood_size
                 and p_a <= seg_max_angle + 0.5 * neighborhood_size
-                and p_a >= MIN_ANGLE
+                and p_a >= min_angle
             ]
         for p_a, p_c in peaks_in_seg:
             peak_angles_done.add(p_a)
@@ -76,7 +77,7 @@ def get_peak_segments(xrd_df):
             nearby_peaks_counts = [
                 p_c_other
                 for p_a_other, p_c_other in peaks_in_seg
-                if abs(p_a - p_a_other) < MIN_N_INTERVAL_SEPARATION * interval_size
+                if abs(p_a - p_a_other) < min_n_interval_separation * interval_size
                 and p_a_other != p_a
             ]
             if len(nearby_peaks_counts) < 1 or p_c == max([p_c, *nearby_peaks_counts]):
@@ -96,15 +97,9 @@ def get_peak_segments(xrd_df):
     return peak_segments
 
 
-# The minimum peak height
-MIN_PEAK_HEIGHT = 10
-# Peaks cannot have sigma wider than this scale factor times the segment length
-MAX_SIGMA_SCALE_FACTOR = 0.7
-# Minimum peak sigma
-MIN_SIGMA = 0.02
-
-
-def get_segment_peak_fit(xrd_df, peak_seg):
+def get_segment_peak_fit(
+    xrd_df, peak_seg, min_peak_height=10, max_sigma_scale_factor=0.7, min_sigma=0.02
+):
     """Return the result of a model fit to a given segment of XRD data. The model is
     made up of some linear background combined with a number of pseudo-Voigt
     distributions, one for each peak originally found in the segment. Fitting is
@@ -116,6 +111,10 @@ def get_segment_peak_fit(xrd_df, peak_seg):
             segment of interest)
         peak_seg (dict): The "peak segment" dictionary (from get_peak_segments) to fit
             the model to
+        min_peak_height (int): The minimum peak height in counts (default = 10)
+        max_sigma_scale_factor (float): Peaks cannot have sigma wider than this scale
+            factor times the total segment length (default = 0.7)
+        min_sigma (float): Minimum peak sigma (default = 0.02)
 
     Returns:
         The result of the fit to the data (as a lmfit.model.ModelResult object)
@@ -175,13 +174,13 @@ def get_segment_peak_fit(xrd_df, peak_seg):
                     is_valid = False
             # make some requirements about the height, center location, and sigma
             if (
-                height_value < MIN_PEAK_HEIGHT
+                height_value < min_peak_height
                 or center_value < peak_seg["min"]
                 or center_value > peak_seg["max"]
                 or sigma_value
-                > MAX_SIGMA_SCALE_FACTOR
+                > max_sigma_scale_factor
                 * (np.max(seg_df["angle"]) - np.min(seg_df["angle"]))
-                or sigma_value < MIN_SIGMA
+                or sigma_value < min_sigma
             ):
                 is_valid = False
             if is_valid:

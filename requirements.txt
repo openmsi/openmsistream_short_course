@@ -1,5 +1,6 @@
-# ipykernel to run Jupyter notebooks
+# ipykernel and Jupyter to run Jupyter notebooks
 ipykernel >= 6.27.1
+jupyter >= 1.0.0
 # lmfit for nonlinear least squares fitting to peaks in XRD data
 lmfit >= 1.2.2
 # OpenMSIStream for streaming data

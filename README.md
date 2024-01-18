@@ -16,6 +16,15 @@ The second document ("sensorpush_activity") has details on the programs we'll ru
 
 The third document ("xrd_analysis") lists commands you can use to upload files to the example XRD analysis topic and run the example XRDAnalysisStreamProcessor program.
 
+The fourth document("openmsistream_cheatsheet") provides comprehensive guidance on utilizing the two primary OpenMSIStream modules for data consumption and production: DataFileDownloadDirectory and DataFileUploadDirectory. The document delves into the intricacies of running the programs, configuring files, and interpreting the required arguments.
+
+
+
+
+
+
+
+
 ## config_files
 
 This folder holds some config files we'll need to run OpenMSIStream programs.

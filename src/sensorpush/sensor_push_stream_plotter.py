@@ -36,6 +36,8 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
             axs.clear()
         self._format_plot()
         for dev_id in self.measurements_df["device_id"].unique():
+            if dev_id=="ali":
+                continue
             device_df = (
                 self.measurements_df[self.measurements_df["device_id"] == dev_id]
             ).copy()
@@ -64,9 +66,9 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
 
     def _process_downloaded_data_file(self, datafile, lock):
         filename_split = datafile.filename.split("_")
-        dev_id = filename_split[1]
+        dev_id = "_".join(filename_split[1:-1])
         timestamp = datetime.strptime(
-            filename_split[2][: -len(".csv")],
+            filename_split[-1][: -len(".csv")],
             SensorPushCSVWriter.FILENAME_TIMESTAMP_FORMAT,
         )
         data_line = BytesIO(datafile.bytestring).readline().decode().strip()

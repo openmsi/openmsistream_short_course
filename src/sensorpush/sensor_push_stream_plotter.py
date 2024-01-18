@@ -36,8 +36,6 @@ class SensorPushStreamPlotter(DataFileStreamProcessor, Runnable):
             axs.clear()
         self._format_plot()
         for dev_id in self.measurements_df["device_id"].unique():
-            if dev_id=="ali":
-                continue
             device_df = (
                 self.measurements_df[self.measurements_df["device_id"] == dev_id]
             ).copy()
